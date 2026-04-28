@@ -6,25 +6,35 @@ async function loadUser() {
   const userId = document.getElementById('userId').value;
 
  
-  if (userId = '') {           
+  if (userId === '') {           
     showResult('Please enter a valid ID');
     return;
   }
 
-  if (userId > 0 === false) {  
+  if (userId <= 0) {  
     showResult('ID must be positive', true);
     return;
   }
 
   
-  if (!cachedUser) {
-    cachedUser = fetchUser(userId);  
+  if (!cachedUser || cachedUser.id !== userId) {
+    cachedUser = await fetchUser(userId);  
   }
 
-    const user = await cachedUser;
- 
-  document.getElementById('result').innerHTML =
-    `<strong>${user.name}</strong><br>${user.email}<br>${user.website}`;  
+    const user = cachedUser;
+
+    const result = document.getElementById('result');
+    result.innerHTML = '';
+
+    const name = document.createElement('strong');
+    name.textContent = user.name;
+
+    result.appendChild(name);
+    result.appendChild(document.createElement('br'));
+    result.appendChild(document.createTextNode(user.email));
+    result.appendChild(document.createElement('br'));
+    result.appendChild(document.createTextNode(user.website));
+
 }
 
 function showResult(message, isError = false) {
