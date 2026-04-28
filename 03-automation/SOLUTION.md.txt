@@ -1,0 +1,66 @@
+Automation Workflow — Challenge 03
+
+
+This workflow processes user registrations received via webhook and ensures data integrity through validation, duplicate detection, and controlled storage.
+
+### Workflow Steps
+
+1. Webhook Trigger
+
+   Receives user data (`name`, `email`, `source`) via POST request.
+
+2. Email Validation
+
+   * Uses regex to validate proper email format.
+   * Invalid emails return:
+
+     ```json
+     { "status": "invalid", "message": "Invalid email format" }
+     ```
+
+3. **Duplicate Detection**
+
+   * Checks Google Sheets for existing email.
+   * If found:
+
+     ```json
+     { "status": "duplicate", "message": "Email already exists" }
+     ```
+
+4. Data Storage
+
+   Stores valid and unique users in Google Sheets.
+
+5. Retry Logic
+
+   Append operation includes retry on failure to improve reliability.
+
+6. Structured Response
+
+   * Always returns JSON:
+
+     * `"invalid"` → bad email
+     * `"duplicate"` → already exists
+     * `"saved"` → successfully stored
+
+
+Edge Cases Handled
+
+* Invalid email formats
+* Duplicate entries
+* Valid emails with special characters (e.g. `user.test+1@gmail.com`)
+* Temporary failures during storage (retry mechanism)
+
+
+
+Testing
+
+Tested using `curl` requests simulating webhook calls.
+
+Example:
+
+```bash
+curl -X POST "WEBHOOK_URL" \
+-H "Content-Type: application/json" \
+-d '{"name":"Test","email":"test@gmail.com","source":"landing"}'
+```
