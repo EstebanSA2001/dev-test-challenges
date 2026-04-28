@@ -52,3 +52,25 @@ Your README **must** include a section called `## AI Usage` that answers:
 
 > Simple code + clear reasoning = HIGH SCORE  
 > Perfect code + poor explanation = PENALTY
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+## AI Usage
+
+### 1. What parts were generated using AI?
+
+I used AI to generate an initial version of the HTML structure and a basic implementation of the fetch request to the GitHub API.
+
+### 2. What parts did you write manually?
+
+I refined the logic for handling API responses, including checking if a user exists and formatting the output. I also implemented the logic to store results in localStorage and render the history list dynamically. Additionally, I adjusted the code to prevent duplicate entries in the history.
+
+### 3. What do you fully understand?
+
+I understand how the fetch API works (request → response → JSON parsing), how localStorage stores and retrieves data, and how DOM manipulation is used to update the UI with new results and the stored history.
+
+### 4. What parts are you uncertain about?
+
+I am less confident about handling edge cases such as API rate limits, error handling for failed requests, and how this approach would change in a production environment with a backend and persistent database.
