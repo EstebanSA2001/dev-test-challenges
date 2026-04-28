@@ -1,3 +1,5 @@
+import re
+
 # script.py
 # BUG #1: naive email validation — only checks for "@", accepts "a@b"
 # BUG #2: no deduplication — duplicates counted multiple times
@@ -14,19 +16,27 @@ users = [
 ]
 
 def validate_email(email):
-    # BUG #1: only checks for "@" — accepts "a@", "@b", "@@"
-    return "@" in email
+    # FIX #1: regex real en lugar de solo verificar "@"
+    pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+    return bool(re.match(pattern, email))
 
 def group_by_domain(users):
+    
+    seen_emails = set()  # FIX #2: deduplicar emails antes de procesar
     result = {}
+    
     for user in users:
         email = user["email"]
-        if validate_email(email):
-            # BUG #3: uses full email as key instead of domain
-            # BUG #2: no deduplication — alice@gmail.com counted twice
-            domain = email          # BUG #3: should be email.split("@")[1]
-            # BUG #4: always sets to 1 instead of incrementing
-            result[domain] = 1      # BUG #4: should be result.get(domain, 0) + 1
+        
+        if not validate_email(email):
+            continue
+        
+        if email in seen_emails:
+            continue                    # FIX #2: saltar duplicados
+        seen_emails.add(email)
+        
+        domain = email.split("@")[1]      # FIX #3: usar dominio, no email completo
+        result[domain] = result.get(domain, 0) + 1      # FIX #4: acumular conteo
     return result
 
 output = group_by_domain(users)
