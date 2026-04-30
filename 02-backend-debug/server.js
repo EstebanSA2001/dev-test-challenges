@@ -10,8 +10,17 @@ const express = require('express');
 const app = express();
 app.use(express.json());
 
+
 // BUG #4: unbounded global array — memory leak under load
 const requestLog = [];
+const MAX_LOG_SIZE = 100;
+
+function logRequest(entry) {
+  requestLog.push(entry);
+  if (requestLog.length > MAX_LOG_SIZE) {
+    requestLog.shift();
+  }
+}
 
 // Simulated async DB read
 async function getDataFromDB() {
@@ -23,30 +32,48 @@ async function getDataFromDB() {
 // GET /data
 // BUG #1: missing await — data is always undefined
 // BUG #6: returns data.result which doesn't exist on the object
-app.get('/data', async (req, res) => {
-  requestLog.push({ ts: Date.now() });   // BUG #4: never trimmed
+app.get('/data', async (req, res, next) => {
+  try {
+    logRequest({ts: Date.now() });  // Log request details for debugging
 
-  const data = getDataFromDB();          // BUG #1: missing await
+  const data = await getDataFromDB();          // BUG #1: missing await
 
   if (!data) {
-    res.status(200).json({ error: 'No data found' });  // BUG #2: should be 404
-    return;
+    return res.status(404).json({ error: 'No data found' });  // BUG #2: should be 404
   }
 
-  res.json({ result: data.result });     // BUG #6: should be data.value
+  res.json({ result: data.value });  // BUG #6: should be data.value
+    }catch (err) {
+      next(err);
+    }    
 });
 
 // POST /save
 // BUG #3: no validation — accepts anything including empty, null, XSS payloads
 // BUG #4: every request logged permanently
-app.post('/save', (req, res) => {
+app.post('/save', (req, res, next) => {
+  try {
   const { name, value } = req.body;
+  if (!name || !value) {
+    return res.status(400).json({ error: 'Name and value are required' });
+  }
 
-  // BUG #3: no validation at all
-  requestLog.push({ name, value, ts: Date.now() });  // BUG #4
+  if (typeof name !== 'string' || typeof value !== 'string') {
+    return res.status(400).json({ error: 'Invalid input types' });
+  }
 
-  res.status(200).json({ saved: true, name, value });
-});
+  logRequest({ name, value, ts: Date.now() });
+  
+  res.status(201).json({ saved: true, name, value });
+  } catch (err) {
+    next(err);
+  }
+  });
+
+  app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Internal Server Error' });
+  });
 
 // BUG #5: no error handling middleware — unhandled errors crash or leak stack traces
 // Missing: app.use((err, req, res, next) => { ... })
